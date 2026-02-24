@@ -27,7 +27,7 @@ export function HeaderBranding() {
           alt="OpenSoul Character"
           fill
           priority
-          className="object-contain drop-shadow-2xl"
+          className="object-contain"
           sizes="(max-width: 768px) 320px, 384px"
         />
       </motion.div>

@@ -1,7 +1,9 @@
 import { Navbar } from "@/components/molecules/Navbar";
 import { HeaderBranding } from "@/components/organisms/HeaderBranding";
 import { Hero } from "@/components/organisms/Hero";
+import { Features } from "@/components/organisms/Features";
 import { Testimonials } from "@/components/organisms/Testimonials";
+import { Integrations } from "@/components/organisms/Integrations";
 
 export default function Home() {
   return (
@@ -9,7 +11,9 @@ export default function Home() {
       <Navbar />
       <HeaderBranding />
       <Hero />
+      <Features />
       <Testimonials />
+      <Integrations />
       
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 text-center text-zinc-500">

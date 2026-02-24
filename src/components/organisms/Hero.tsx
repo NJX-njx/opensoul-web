@@ -2,6 +2,7 @@
 
 import { Container } from "@/components/atoms/Container";
 import { Terminal } from "@/components/molecules/Terminal";
+import { DownloadButton } from "@/components/molecules/DownloadButton";
 import { ArrowRight, Github } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,21 +25,16 @@ export function Hero() {
               Connect with WhatsApp, Telegram, Discord, and 30+ more channels. 
               Your data stays yours.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <DownloadButton />
+              
               <Link
                 href="https://github.com/NJX-njx/opensoul"
                 target="_blank"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition-transform hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10"
               >
                 <Github size={20} />
                 Star on GitHub
-              </Link>
-              <Link
-                href="/docs"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10"
-              >
-                Read Docs
-                <ArrowRight size={16} />
               </Link>
             </div>
           </motion.div>

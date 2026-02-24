@@ -1,0 +1,364 @@
+---
+summary: "How the installer scripts work (install.sh, install-cli.sh, install.ps1), flags, and automation"
+read_when:
+  - You want to understand `opensoul.ai/install.sh`
+  - You want to automate installs (CI / headless)
+  - You want to install from a GitHub checkout
+title: "Installer Internals"
+---
+
+# Installer internals
+
+OpenSoul ships three installer scripts, served from `opensoul.ai`.
+
+| Script                             | Platform             | What it does                                                                                 |
+| ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| [`install.sh`](#installsh)         | macOS / Linux / WSL  | Installs Node if needed, installs OpenSoul via npm (default) or git, and can run onboarding. |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + OpenSoul into a local prefix (`~/.opensoul`). No root required.              |
+| [`install.ps1`](#installps1)       | Windows (PowerShell) | Installs Node if needed, installs OpenSoul via npm (default) or git, and can run onboarding. |
+
+## Quick commands
+
+#### install.sh
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash
+```
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash -s -- --help
+```
+
+#### install-cli.sh
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash
+```
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash -s -- --help
+```
+
+#### install.ps1
+
+```powershell
+iwr -useb https://opensoul.ai/install.ps1 | iex
+```
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://opensoul.ai/install.ps1))) -Tag beta -NoOnboard -DryRun
+```
+
+> **Note**
+> If install succeeds but `opensoul` is not found in a new terminal, see [Node.js troubleshooting](/install/node#troubleshooting).
+
+---
+
+## install.sh
+
+> **Tip**
+> Recommended for most interactive installs on macOS/Linux/WSL.
+
+### Flow (install.sh)
+
+1. **Detect OS**
+
+   Supports macOS and Linux (including WSL). If macOS is detected, installs Homebrew if missing.
+
+2. **Ensure Node.js 22+**
+
+   Checks Node version and installs Node 22 if needed (Homebrew on macOS, NodeSource setup scripts on Linux apt/dnf/yum).
+
+3. **Ensure Git**
+
+   Installs Git if missing.
+
+4. **Install OpenSoul**
+
+   - `npm` method (default): global npm install
+   - `git` method: clone/update repo, install deps with pnpm, build, then install wrapper at `~/.local/bin/opensoul`
+
+5. **Post-install tasks**
+
+   - Runs `opensoul doctor --non-interactive` on upgrades and git installs (best effort)
+   - Attempts onboarding when appropriate (TTY available, onboarding not disabled, and bootstrap/config checks pass)
+   - Defaults `SHARP_IGNORE_GLOBAL_LIBVIPS=1`
+
+### Source checkout detection
+
+If run inside an OpenSoul checkout (`package.json` + `pnpm-workspace.yaml`), the script offers:
+
+- use checkout (`git`), or
+- use global install (`npm`)
+
+If no TTY is available and no install method is set, it defaults to `npm` and warns.
+
+The script exits with code `2` for invalid method selection or invalid `--install-method` values.
+
+### Examples (install.sh)
+
+#### Default
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash
+```
+
+#### Skip onboarding
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash -s -- --no-onboard
+```
+
+#### Git install
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash -s -- --install-method git
+```
+
+#### Dry run
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash -s -- --dry-run
+```
+
+#### Flags reference
+
+| Flag                            | Description                                                |
+| ------------------------------- | ---------------------------------------------------------- |
+| `--install-method npm\|git`     | Choose install method (default: `npm`). Alias: `--method`  |
+| `--npm`                         | Shortcut for npm method                                    |
+| `--git`                         | Shortcut for git method. Alias: `--github`                 |
+| `--version <version\|dist-tag>` | npm version or dist-tag (default: `latest`)                |
+| `--beta`                        | Use beta dist-tag if available, else fallback to `latest`  |
+| `--git-dir <path>`              | Checkout directory (default: `~/opensoul`). Alias: `--dir` |
+| `--no-git-update`               | Skip `git pull` for existing checkout                      |
+| `--no-prompt`                   | Disable prompts                                            |
+| `--no-onboard`                  | Skip onboarding                                            |
+| `--onboard`                     | Enable onboarding                                          |
+| `--dry-run`                     | Print actions without applying changes                     |
+| `--verbose`                     | Enable debug output (`set -x`, npm notice-level logs)      |
+| `--help`                        | Show usage (`-h`)                                          |
+
+#### Environment variables reference
+
+| Variable                                    | Description                                   |
+| ------------------------------------------- | --------------------------------------------- |
+| `OPENSOUL_INSTALL_METHOD=git\|npm`          | Install method                                |
+| `OPENSOUL_VERSION=latest\|next\|<semver>`   | npm version or dist-tag                       |
+| `OPENSOUL_BETA=0\|1`                        | Use beta if available                         |
+| `OPENSOUL_GIT_DIR=<path>`                   | Checkout directory                            |
+| `OPENSOUL_GIT_UPDATE=0\|1`                  | Toggle git updates                            |
+| `OPENSOUL_NO_PROMPT=1`                      | Disable prompts                               |
+| `OPENSOUL_NO_ONBOARD=1`                     | Skip onboarding                               |
+| `OPENSOUL_DRY_RUN=1`                        | Dry run mode                                  |
+| `OPENSOUL_VERBOSE=1`                        | Debug mode                                    |
+| `OPENSOUL_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                 |
+| `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | Control sharp/libvips behavior (default: `1`) |
+
+---
+
+## install-cli.sh
+
+> **Info**
+> Designed for environments where you want everything under a local prefix (default `~/.opensoul`) and no system Node dependency.
+
+### Flow (install-cli.sh)
+
+1. **Install local Node runtime**
+
+   Downloads Node tarball (default `22.22.0`) to `<prefix>/tools/node-v<version>` and verifies SHA-256.
+
+2. **Ensure Git**
+
+   If Git is missing, attempts install via apt/dnf/yum on Linux or Homebrew on macOS.
+
+3. **Install OpenSoul under prefix**
+
+   Installs with npm using `--prefix <prefix>`, then writes wrapper to `<prefix>/bin/opensoul`.
+
+### Examples (install-cli.sh)
+
+#### Default
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash
+```
+
+#### Custom prefix + version
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash -s -- --prefix /opt/opensoul --version latest
+```
+
+#### Automation JSON output
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash -s -- --json --prefix /opt/opensoul
+```
+
+#### Run onboarding
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash -s -- --onboard
+```
+
+#### Flags reference
+
+| Flag                   | Description                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `--prefix <path>`      | Install prefix (default: `~/.opensoul`)                                         |
+| `--version <ver>`      | OpenSoul version or dist-tag (default: `latest`)                                |
+| `--node-version <ver>` | Node version (default: `22.22.0`)                                               |
+| `--json`               | Emit NDJSON events                                                              |
+| `--onboard`            | Run `opensoul onboard` after install                                            |
+| `--no-onboard`         | Skip onboarding (default)                                                       |
+| `--set-npm-prefix`     | On Linux, force npm prefix to `~/.npm-global` if current prefix is not writable |
+| `--help`               | Show usage (`-h`)                                                               |
+
+#### Environment variables reference
+
+| Variable                                    | Description                                                                       |
+| ------------------------------------------- | --------------------------------------------------------------------------------- |
+| `OPENSOUL_PREFIX=<path>`                    | Install prefix                                                                    |
+| `OPENSOUL_VERSION=<ver>`                    | OpenSoul version or dist-tag                                                      |
+| `OPENSOUL_NODE_VERSION=<ver>`               | Node version                                                                      |
+| `OPENSOUL_NO_ONBOARD=1`                     | Skip onboarding                                                                   |
+| `OPENSOUL_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                                                     |
+| `OPENSOUL_GIT_DIR=<path>`                   | Legacy cleanup lookup path (used when removing old `Peekaboo` submodule checkout) |
+| `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | Control sharp/libvips behavior (default: `1`)                                     |
+
+---
+
+## install.ps1
+
+### Flow (install.ps1)
+
+1. **Ensure PowerShell + Windows environment**
+
+   Requires PowerShell 5+.
+
+2. **Ensure Node.js 22+**
+
+   If missing, attempts install via winget, then Chocolatey, then Scoop.
+
+3. **Install OpenSoul**
+
+   - `npm` method (default): global npm install using selected `-Tag`
+   - `git` method: clone/update repo, install/build with pnpm, and install wrapper at `%USERPROFILE%\.local\bin\opensoul.cmd`
+
+4. **Post-install tasks**
+
+   Adds needed bin directory to user PATH when possible, then runs `opensoul doctor --non-interactive` on upgrades and git installs (best effort).
+
+### Examples (install.ps1)
+
+#### Default
+
+```powershell
+iwr -useb https://opensoul.ai/install.ps1 | iex
+```
+
+#### Git install
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://opensoul.ai/install.ps1))) -InstallMethod git
+```
+
+#### Custom git directory
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://opensoul.ai/install.ps1))) -InstallMethod git -GitDir "C:\opensoul"
+```
+
+#### Dry run
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://opensoul.ai/install.ps1))) -DryRun
+```
+
+#### Flags reference
+
+| Flag                      | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| `-InstallMethod npm\|git` | Install method (default: `npm`)                        |
+| `-Tag <tag>`              | npm dist-tag (default: `latest`)                       |
+| `-GitDir <path>`          | Checkout directory (default: `%USERPROFILE%\opensoul`) |
+| `-NoOnboard`              | Skip onboarding                                        |
+| `-NoGitUpdate`            | Skip `git pull`                                        |
+| `-DryRun`                 | Print actions only                                     |
+
+#### Environment variables reference
+
+| Variable                           | Description        |
+| ---------------------------------- | ------------------ |
+| `OPENSOUL_INSTALL_METHOD=git\|npm` | Install method     |
+| `OPENSOUL_GIT_DIR=<path>`          | Checkout directory |
+| `OPENSOUL_NO_ONBOARD=1`            | Skip onboarding    |
+| `OPENSOUL_GIT_UPDATE=0`            | Disable git pull   |
+| `OPENSOUL_DRY_RUN=1`               | Dry run mode       |
+
+> **Note**
+> If `-InstallMethod git` is used and Git is missing, the script exits and prints the Git for Windows link.
+
+---
+
+## CI and automation
+
+Use non-interactive flags/env vars for predictable runs.
+
+#### install.sh (non-interactive npm)
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash -s -- --no-prompt --no-onboard
+```
+
+#### install.sh (non-interactive git)
+
+```bash
+OPENSOUL_INSTALL_METHOD=git OPENSOUL_NO_PROMPT=1 \
+  curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash
+```
+
+#### install-cli.sh (JSON)
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install-cli.sh | bash -s -- --json --prefix /opt/opensoul
+```
+
+#### install.ps1 (skip onboarding)
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://opensoul.ai/install.ps1))) -NoOnboard
+```
+
+---
+
+## Troubleshooting
+
+#### Why is Git required?
+
+Git is required for `git` install method. For `npm` installs, Git is still checked/installed to avoid `spawn git ENOENT` failures when dependencies use git URLs.
+
+#### Why does npm hit EACCES on Linux?
+
+Some Linux setups point npm global prefix to root-owned paths. `install.sh` can switch prefix to `~/.npm-global` and append PATH exports to shell rc files (when those files exist).
+
+#### sharp/libvips issues
+
+The scripts default `SHARP_IGNORE_GLOBAL_LIBVIPS=1` to avoid sharp building against system libvips. To override:
+
+```bash
+SHARP_IGNORE_GLOBAL_LIBVIPS=0 curl -fsSL --proto '=https' --tlsv1.2 https://opensoul.ai/install.sh | bash
+```
+
+#### Windows: "npm error spawn git / ENOENT"
+
+Install Git for Windows, reopen PowerShell, rerun installer.
+
+#### Windows: "opensoul is not recognized"
+
+Run `npm config get prefix`, append `\bin`, add that directory to user PATH, then reopen PowerShell.
+
+#### opensoul not found after install
+
+Usually a PATH issue. See [Node.js troubleshooting](/install/node#troubleshooting).

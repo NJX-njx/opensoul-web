@@ -1,0 +1,70 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Sync job if we want to run sync before build on every push to main, 
+  # or just build what's in the repo.
+  # The requirement says "Node.js script to pull... if new commit detected". 
+  # Usually this means a scheduled job that commits back to the repo, or a build-time sync.
+  # For this workflow, we will assume we want to build the static site.
+  # If we want to sync content *during* build:
+  
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Not needed if not using git history for lastUpdated, but good practice
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync Docs
+        run: pnpm docs:sync
+
+      - name: Build Docs
+        run: pnpm docs:build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
