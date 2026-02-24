@@ -110,7 +110,7 @@ export function ProductDemo() {
             prevSlide();
             setIsAutoPlaying(false);
           }}
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
+          className="hidden md:flex absolute left-0 lg:-left-4 xl:-left-12 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
           aria-label="Previous slide"
         >
           <ChevronLeft size={24} />
@@ -123,14 +123,14 @@ export function ProductDemo() {
             nextSlide();
             setIsAutoPlaying(false);
           }}
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
+          className="hidden md:flex absolute right-0 lg:-right-4 xl:-right-12 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
           aria-label="Next slide"
         >
           <ChevronRight size={24} />
         </button>
 
         <div 
-          className="relative w-full max-w-4xl lg:max-w-5xl mx-auto group outline-none lg:-translate-x-[12%] transition-transform duration-500"
+          className="relative w-full max-w-4xl lg:max-w-5xl mx-auto group outline-none lg:-translate-x-[6%] transition-transform duration-500"
           onMouseEnter={() => setIsAutoPlaying(false)}
           onMouseLeave={() => setIsAutoPlaying(true)}
           onTouchStart={onTouchStart}
