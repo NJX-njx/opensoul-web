@@ -80,7 +80,8 @@ export default defineConfig({
     
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Guide', link: '/getting-started' }
+      { text: 'Guide', link: '/guide' },
+      { text: 'Getting Started', link: '/start/getting-started' }
     ],
 
     sidebar: sidebar, // Use the auto-generated sidebar
