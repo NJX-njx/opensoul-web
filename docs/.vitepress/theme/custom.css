@@ -184,3 +184,8 @@ body {
   backdrop-filter: blur(4px);
   border: 1px solid var(--vp-c-border);
 }
+
+/* Hide header anchors */
+.header-anchor {
+  display: none !important;
+}

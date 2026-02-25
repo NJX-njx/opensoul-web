@@ -80,8 +80,7 @@ export default defineConfig({
     
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Guide', link: '/getting-started' }, // Assuming this file exists or will exist
-      { text: 'GitHub', link: 'https://github.com/NJX-njx/opensoul' }
+      { text: 'Guide', link: '/getting-started' }
     ],
 
     sidebar: sidebar, // Use the auto-generated sidebar
