@@ -1,71 +1,87 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Container } from "@/components/atoms/Container";
 import { DemoVideo } from "@/components/molecules/DemoVideo";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Circle } from "lucide-react";
 import Image from "next/image";
 
-const slides = [
+const videos = [
+  "/assets/video/opensoul_demo_video2.mp4",
+  "/assets/video/opensoul_demo_video3.mp4",
+];
+
+const imageSlides = [
   {
-    src: "/images/demo/demo1.png",
-    alt: "OpenSoul Chat Interface",
-    title: "Natural Chat Experience",
-    description: "Engage in seamless, context-aware conversations. The intuitive chat interface supports markdown rendering, code blocks, and real-time streaming responses for a fluid interaction.",
+    src: "/assets/images/demo/image1.png",
+    alt: "Interactive Chat Interface",
+    title: "Interactive Chat Interface",
+    description: "Experience a seamless conversational flow with our advanced chat interface. Supports rich text, code blocks, and real-time streaming for a natural interaction.",
   },
   {
-    src: "/images/demo/demo2.png",
-    alt: "System Dashboard",
-    title: "Real-time Monitoring",
-    description: "Stay in control with the comprehensive dashboard. Monitor system health, active sessions, resource usage, and connectivity status at a glance.",
+    src: "/assets/images/demo/image2.png",
+    alt: "Agent Management Dashboard",
+    title: "Agent Management Dashboard",
+    description: "Monitor and manage your AI agents with ease. The dashboard provides a comprehensive view of agent status, performance metrics, and active sessions.",
   },
   {
-    src: "/images/demo/demo3.png",
-    alt: "Advanced Configuration",
-    title: "Granular Control",
-    description: "Customize every aspect of your AI agent. Fine-tune model parameters, manage plugins, and configure behavior settings to match your specific requirements.",
+    src: "/assets/images/demo/image3.png",
+    alt: "Granular Configuration",
+    title: "Granular Configuration",
+    description: "Fine-tune every aspect of your system. Access detailed configuration settings to customize behavior, model parameters, and plugin integrations.",
+  },
+  {
+    src: "/assets/images/demo/image4.png",
+    alt: "System Diagnostics",
+    title: "System Diagnostics",
+    description: "Keep your system healthy with built-in diagnostics tools. View real-time logs, resource usage, and system health checks at a glance.",
   },
 ];
 
 export function ProductDemo() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  // --- Video Carousel State ---
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isVideoAutoPlaying, setIsVideoAutoPlaying] = useState(false); // Default to false for manual control
+  
+  // --- Image Carousel State ---
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isImageAutoPlaying, setIsImageAutoPlaying] = useState(true);
 
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
+  // --- Video Logic ---
+  const nextVideo = useCallback(() => {
+    setCurrentVideoIndex((prev) => (prev + 1) % videos.length);
   }, []);
 
-  const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
+  const prevVideo = useCallback(() => {
+    setCurrentVideoIndex((prev) => (prev - 1 + videos.length) % videos.length);
   }, []);
 
+  // --- Image Logic ---
+  const nextImage = useCallback(() => {
+    setCurrentImageIndex((prev) => (prev + 1) % imageSlides.length);
+  }, []);
+
+  const prevImage = useCallback(() => {
+    setCurrentImageIndex((prev) => (prev - 1 + imageSlides.length) % imageSlides.length);
+  }, []);
+
+  // Image Auto-play
   useEffect(() => {
-    if (!isAutoPlaying) return;
-    const interval = setInterval(nextSlide, 5000);
+    if (!isImageAutoPlaying) return;
+    const interval = setInterval(nextImage, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide]);
+  }, [isImageAutoPlaying, nextImage]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      prevSlide();
-      setIsAutoPlaying(false);
-    } else if (e.key === "ArrowRight") {
-      nextSlide();
-      setIsAutoPlaying(false);
-    }
-  };
-
-  // Touch handling for swipe
+  // Touch handling for Image Swipe
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
-    setIsAutoPlaying(false);
+    setIsImageAutoPlaying(false);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
@@ -78,21 +94,39 @@ export function ProductDemo() {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
-    if (isLeftSwipe) {
-      nextSlide();
-    }
-    if (isRightSwipe) {
-      prevSlide();
-    }
+    if (isLeftSwipe) nextImage();
+    if (isRightSwipe) prevImage();
   };
+
+  // Video Swipe Logic
+  const [videoTouchStart, setVideoTouchStart] = useState<number | null>(null);
+  const [videoTouchEnd, setVideoTouchEnd] = useState<number | null>(null);
+
+  const onVideoTouchStart = (e: React.TouchEvent) => {
+    setVideoTouchEnd(null);
+    setVideoTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onVideoTouchMove = (e: React.TouchEvent) => {
+    setVideoTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onVideoTouchEnd = () => {
+    if (!videoTouchStart || !videoTouchEnd) return;
+    const distance = videoTouchStart - videoTouchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) nextVideo();
+    if (isRightSwipe) prevVideo();
+  };
+
 
   return (
     <section
       id="demo"
       className="py-24 relative overflow-hidden bg-gradient-to-b from-transparent to-black/20"
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      aria-label="Product Demo Carousel"
+      aria-label="Product Demo Section"
     >
       <Container className="relative">
         <div className="text-center mb-16">
@@ -104,154 +138,173 @@ export function ProductDemo() {
           </p>
         </div>
 
-        {/* Video Player */}
-        <div className="mb-24 flex justify-center w-full px-4">
-          <DemoVideo src="/assets/video/opensoul_demo_video1.mp4" />
+        {/* --- Video Showcase Section --- */}
+        <div className="mb-24 w-full">
+            <h3 className="text-2xl font-semibold text-white mb-8 text-center">Feature Walkthrough</h3>
+            <div 
+              className="relative w-full max-w-[1200px] mx-auto group"
+              onTouchStart={onVideoTouchStart}
+              onTouchMove={onVideoTouchMove}
+              onTouchEnd={onVideoTouchEnd}
+            >
+                {/* Video Carousel Controls (Desktop) */}
+                <button
+                    onClick={prevVideo}
+                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/40 border border-white/10 text-white hover:bg-black/60 transition-all z-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Previous video"
+                >
+                    <ChevronLeft size={24} />
+                </button>
+                <button
+                    onClick={nextVideo}
+                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/40 border border-white/10 text-white hover:bg-black/60 transition-all z-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Next video"
+                >
+                    <ChevronRight size={24} />
+                </button>
+
+                {/* Video Container with Animation */}
+                <div className="overflow-hidden rounded-xl shadow-2xl bg-black/20 backdrop-blur-sm border border-white/5 aspect-video relative">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentVideoIndex}
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="w-full h-full"
+                        >
+                            <DemoVideo 
+                                src={videos[currentVideoIndex]} 
+                                className="w-full h-full"
+                            />
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Video Indicators */}
+                <div className="flex justify-center mt-6 gap-2">
+                    {videos.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrentVideoIndex(idx)}
+                            className={`transition-all duration-300 ${
+                                idx === currentVideoIndex 
+                                    ? "w-8 h-2 bg-blue-500 rounded-full" 
+                                    : "w-2 h-2 bg-zinc-600 rounded-full hover:bg-zinc-500"
+                            }`}
+                            aria-label={`Go to video ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
         </div>
 
-        {/* Previous Button - Absolute Left (Desktop) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            prevSlide();
-            setIsAutoPlaying(false);
-          }}
-          className="hidden md:flex absolute left-0 lg:-left-4 xl:-left-12 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft size={24} />
-        </button>
-
-        {/* Next Button - Absolute Right (Desktop) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            nextSlide();
-            setIsAutoPlaying(false);
-          }}
-          className="hidden md:flex absolute right-0 lg:-right-4 xl:-right-12 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
-          aria-label="Next slide"
-        >
-          <ChevronRight size={24} />
-        </button>
-
-        <div 
-          className="relative w-full max-w-4xl lg:max-w-5xl mx-auto group outline-none lg:-translate-x-[6%] transition-transform duration-500"
-          onMouseEnter={() => setIsAutoPlaying(false)}
-          onMouseLeave={() => setIsAutoPlaying(true)}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {/* Main Display Area */}
-          <div className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[24/9] h-[500px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm shadow-2xl">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="absolute inset-0 flex flex-col md:flex-row"
-              >
-                {/* Image Section - 65% width on desktop */}
-                <div className="relative w-full h-2/3 md:h-full md:w-[65%] bg-black/20 flex items-center justify-center">
-                  <div className="relative w-full h-full p-4 md:p-8">
-                     <Image
-                      src={slides[currentIndex].src}
-                      alt={slides[currentIndex].alt}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 65vw"
-                      priority={currentIndex === 0}
-                    />
-                  </div>
-                </div>
-
-                {/* Text Content Section - 35% width on desktop */}
-                <div className="relative w-full h-1/3 md:h-full md:w-[35%] flex flex-col justify-center p-6 md:p-10 bg-white/5 backdrop-blur-md">
-                  {/* Continuous Animation Wrapper */}
-                  <motion.div
-                    animate={{ 
-                      opacity: [0.9, 1, 0.9],
-                      scale: [0.98, 1, 0.98]
+        {/* --- Image Showcase Section --- */}
+        <div className="w-full">
+            <h3 className="text-2xl font-semibold text-white mb-8 text-center">Interface Highlights</h3>
+            
+            <div className="relative w-full max-w-5xl mx-auto">
+                {/* Image Controls (Desktop) */}
+                 <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        prevImage();
+                        setIsImageAutoPlaying(false);
                     }}
-                    transition={{
-                      duration: 3,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      repeatType: "reverse"
+                    className="hidden md:flex absolute -left-12 lg:-left-16 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
+                    aria-label="Previous image"
+                >
+                    <ChevronLeft size={24} />
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        nextImage();
+                        setIsImageAutoPlaying(false);
                     }}
-                  >
-                    <motion.h3 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white"
-                    >
-                      {slides[currentIndex].title}
-                    </motion.h3>
-                    <motion.p 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="text-sm md:text-base text-zinc-300 leading-relaxed"
-                    >
-                      {slides[currentIndex].description}
-                    </motion.p>
-                  </motion.div>
+                    className="hidden md:flex absolute -right-12 lg:-right-16 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-white/50 z-20"
+                    aria-label="Next image"
+                >
+                    <ChevronRight size={24} />
+                </button>
+
+                {/* Image Content */}
+                <div 
+                    className="relative group outline-none"
+                    onMouseEnter={() => setIsImageAutoPlaying(false)}
+                    onMouseLeave={() => setIsImageAutoPlaying(true)}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                >
+                    <div className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[24/9] h-[500px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm shadow-2xl">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentImageIndex}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.4, ease: "easeInOut" }}
+                                className="absolute inset-0 flex flex-col md:flex-row"
+                            >
+                                {/* Image Section - 65% width on desktop */}
+                                <div className="relative w-full h-2/3 md:h-full md:w-[65%] bg-black/20 flex items-center justify-center p-4 md:p-8">
+                                    <div className="relative w-full h-full">
+                                        <Image
+                                            src={imageSlides[currentImageIndex].src}
+                                            alt={imageSlides[currentImageIndex].alt}
+                                            fill
+                                            className="object-contain"
+                                            sizes="(max-width: 768px) 100vw, 65vw"
+                                            priority={currentImageIndex === 0}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Text Content Section - 35% width on desktop */}
+                                <div className="relative w-full h-1/3 md:h-full md:w-[35%] flex flex-col justify-center p-6 md:p-10 bg-white/5 backdrop-blur-md border-t md:border-t-0 md:border-l border-white/5">
+                                    <motion.h3 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white"
+                                    >
+                                        {imageSlides[currentImageIndex].title}
+                                    </motion.h3>
+                                    <motion.p 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="text-sm md:text-base text-zinc-300 leading-relaxed"
+                                    >
+                                        {imageSlides[currentImageIndex].description}
+                                    </motion.p>
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Image Indicators */}
+                    <div className="flex justify-center mt-6 gap-2">
+                        {imageSlides.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => {
+                                    setCurrentImageIndex(idx);
+                                    setIsImageAutoPlaying(false);
+                                }}
+                                className={`transition-all duration-300 ${
+                                    idx === currentImageIndex 
+                                        ? "w-8 h-2 bg-blue-500 rounded-full" 
+                                        : "w-2 h-2 bg-zinc-600 rounded-full hover:bg-zinc-500"
+                                }`}
+                                aria-label={`Go to slide ${idx + 1}`}
+                            />
+                        ))}
+                    </div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Mobile Navigation Buttons (Overlay) - Only visible on small screens */}
-          <div className="md:hidden absolute inset-0 pointer-events-none flex items-center justify-between px-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                prevSlide();
-                setIsAutoPlaying(false);
-              }}
-              className="pointer-events-auto p-2 rounded-full bg-black/50 text-white hover:bg-white/20 transition-all focus:outline-none"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                nextSlide();
-                setIsAutoPlaying(false);
-              }}
-              className="pointer-events-auto p-2 rounded-full bg-black/50 text-white hover:bg-white/20 transition-all focus:outline-none"
-              aria-label="Next slide"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          {/* Indicators */}
-          <div className="flex justify-center gap-3 mt-8">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setCurrentIndex(index);
-                  setIsAutoPlaying(false);
-                }}
-                className={`transition-all duration-300 focus:outline-none p-1 ${
-                  index === currentIndex 
-                    ? "text-white scale-125" 
-                    : "text-white/30 hover:text-white/60"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-                aria-current={index === currentIndex}
-              >
-                <Circle size={10} fill={index === currentIndex ? "currentColor" : "none"} />
-              </button>
-            ))}
-          </div>
+            </div>
         </div>
       </Container>
     </section>
