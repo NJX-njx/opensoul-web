@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Container } from "@/components/atoms/Container";
+import { DemoVideo } from "@/components/molecules/DemoVideo";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Circle } from "lucide-react";
 import Image from "next/image";
@@ -101,6 +102,11 @@ export function ProductDemo() {
           <p className="mt-4 text-lg text-zinc-400 max-w-2xl mx-auto">
             Experience the power and flexibility of OpenSoul through our intuitive interface.
           </p>
+        </div>
+
+        {/* Video Player */}
+        <div className="mb-24 flex justify-center w-full px-4">
+          <DemoVideo src="/assets/video/opensoul_demo_video1.mp4" />
         </div>
 
         {/* Previous Button - Absolute Left (Desktop) */}
