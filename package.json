@@ -2,6 +2,11 @@
   "name": "opensoul-web",
   "version": "0.1.0",
   "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "supabase"
+    ]
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,9 +15,13 @@
     "docs:sync": "node scripts/sync-docs.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "supabase": "supabase",
+    "supabase:run": "powershell -ExecutionPolicy Bypass -File ./scripts/supabase.ps1"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.98.0",
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
@@ -32,6 +41,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "supabase": "^2.76.15",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitepress": "^1.6.4"

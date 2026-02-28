@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Container } from "@/components/atoms/Container";
+import { AuthButton } from "@/components/molecules/AuthButton";
 import { Ghost, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +42,7 @@ export function Navbar() {
           >
             GitHub
           </Link>
+          <AuthButton />
         </div>
 
         {/* Mobile Menu Button */}
@@ -79,6 +81,9 @@ export function Navbar() {
               >
                 GitHub
               </Link>
+              <div className="flex justify-center">
+                <AuthButton />
+              </div>
             </Container>
           </motion.div>
         )}
